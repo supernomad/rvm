@@ -52,6 +52,18 @@ impl Vm {
                         _ => panic!("invalid value type"),
                     }
                 }
+                Opcode::Sqrt => {
+                    let value = self.stack.pop();
+                    match value {
+                        Value::Int(n) => {
+                            let result = (n as f64).sqrt();
+                            self.stack.push(Value::Float(result));
+                        }
+                        Value::Float(n) => {
+                            self.stack.push(Value::Float(n.sqrt()));
+                        }
+                    }
+                }
                 Opcode::Return => {
                     return Some(self.stack.pop());
                 }
@@ -154,5 +166,33 @@ mod tests {
         let mut vm = Vm::new(bytecode, 10);
         let ret = vm.run().unwrap();
         assert_eq!(ret, Value::Int(expected));
+    }
+
+    #[test]
+    fn test_sqrt() {
+        let mut bytecode = vec![Opcode::Literal as u8];
+        bytecode.extend(Value::Int(16).to_vec());
+        bytecode.push(Opcode::Sqrt as u8);
+        bytecode.push(Opcode::Return as u8);
+        
+        let mut vm = Vm::new(bytecode, 10);
+        let ret = vm.run().unwrap();
+        assert_eq!(ret, Value::Float(4.0));
+    }
+
+    #[rstest]
+    #[case(0, 0.0)]
+    #[case(1, 1.0)]
+    #[case(4, 2.0)]
+    #[case(16, 4.0)]
+    fn test_sqrt_values(#[case] input: i64, #[case] expected: f64) {
+        let mut bytecode = vec![Opcode::Literal as u8];
+        bytecode.extend(Value::Int(input).to_vec());
+        bytecode.push(Opcode::Sqrt as u8);
+        bytecode.push(Opcode::Return as u8);
+        
+        let mut vm = Vm::new(bytecode, 10);
+        let ret = vm.run().unwrap();
+        assert_eq!(ret, Value::Float(expected));
     }
 }

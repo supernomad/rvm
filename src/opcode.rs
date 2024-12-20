@@ -9,6 +9,7 @@ pub enum Opcode {
     Modulo = 0x05,
     Return = 0x06,
     Factorial = 0x07,
+    Sqrt = 0x08,
 }
 
 impl From<u8> for Opcode {
@@ -22,6 +23,7 @@ impl From<u8> for Opcode {
             0x05 => Opcode::Modulo,
             0x06 => Opcode::Return,
             0x07 => Opcode::Factorial,
+            0x08 => Opcode::Sqrt,
             _ => panic!("invalid opcode"),
         }
     }
@@ -46,7 +48,7 @@ mod tests {
     }
 
     #[rstest]
-    #[case(0x08)]
+    #[case(0x09)]
     #[case(0xFF)]
     #[should_panic(expected = "invalid opcode")]
     fn test_invalid_opcodes(#[case] invalid_opcode: u8) {

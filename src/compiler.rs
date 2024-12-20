@@ -53,11 +53,12 @@ fn parens(input: &str) -> IResult<&str, Expr> {
 fn term(input: &str) -> IResult<&str, Expr> {
     let (input, num) = delimited(multispace0, alt((number, parens)), multispace0)(input)?;
     
-    // Look for optional factorial operator
-    let (input, factorial) = opt(char('!'))(input)?;
+    // Look for optional unary operators
+    let (input, op) = opt(alt((char('!'), char('√'))))(input)?;
     
-    match factorial {
+    match op {
         Some('!') => Ok((input, Expr::UnaryOp('!', Box::new(num)))),
+        Some('√') => Ok((input, Expr::UnaryOp('√', Box::new(num)))),
         _ => Ok((input, num)),
     }
 }
@@ -95,6 +96,10 @@ fn compile_expr(expr: &Expr, bytecode: &mut Vec<u8>) {
         Expr::UnaryOp('!', expr) => {
             compile_expr(expr, bytecode);
             bytecode.push(Opcode::Factorial as u8);
+        }
+        Expr::UnaryOp('√', expr) => {
+            compile_expr(expr, bytecode);
+            bytecode.push(Opcode::Sqrt as u8);
         }
         Expr::UnaryOp(_, _) => {
             panic!("Unsupported unary operator");
@@ -199,5 +204,22 @@ mod tests {
         );
         let mut bytecode = Vec::new();
         compile_expr(&ast, &mut bytecode);
+    }
+
+    #[rstest]
+    #[case("4√", Value::Float(2.0))]
+    #[case("16√", Value::Float(4.0))]
+    #[case("2√", Value::Float(1.4142135623730951))]
+    #[case("(2 + 2)√", Value::Float(2.0))]
+    fn test_sqrt_operations(#[case] input: &str, #[case] expected: Value) {
+        assert_eq!(eval(input), expected);
+    }
+
+    #[rstest]
+    #[case("(4 + 5)√", Value::Float(3.0))]
+    #[case("2 * 16√", Value::Float(8.0))]
+    #[case("(3 * 3)√", Value::Float(3.0))]
+    fn test_sqrt_with_expressions(#[case] input: &str, #[case] expected: Value) {
+        assert_eq!(eval(input), expected);
     }
 }
